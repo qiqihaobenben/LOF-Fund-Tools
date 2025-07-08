@@ -1,0 +1,5 @@
+akshare>=1.17.7
+pandas>=2.0.0
+numpy>=1.22.0
+flask>=3.0.0
+gunicorn>=21.0.0

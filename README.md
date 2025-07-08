@@ -1,36 +1,134 @@
-# LOF-Fund-Tools
-中国市场LOF基金套利工具，免费铲子，使用AKshare做数据源。
+# LOF 基金套利分析工具
 
-1 使用时需要有Python环境。安装依赖库，在命令行窗口输入：
-pip install akshare,flask,pandas,numpy
+LOF 基金套利分析工具是一个 RESTful API 服务，用于分析 LOF 基金的套利机会。它通过分析 LOF 基金的溢价率、成交额等数据，筛选出潜在的套利机会。
 
-2 把lof3.py文件下载并运行：例如，下载到D盘,在命令行窗口输入：
-python d:\lof3.py
+fork 自 https://github.com/mydreamworldpolly/LOF-Fund-Tools
 
-3 用浏览器访问http://127.0.0.1:5000 稍等几秒就可以看到基金数据。  
-系统默认过滤条件：日成交量大于500000元，且溢价率大于0.3%或折价率大于0.7%的基金，如果有特殊需求可以修改filter_funds函数。
-系统默认以溢价率的绝对值排序，如图。
-<img width="1040" alt="image" src="https://github.com/mydreamworldpolly/LOF-Fund-Tools/assets/35619739/ec59d225-cfe4-4315-b085-2763a5a18159">
+## 功能特点
 
-作为一个极其简易的工具，每次刷新时会获取数据，网页显示较慢，敬请谅解。希望它可以帮助更多的小散户获得LOF套利的机会，不用花钱买铲子。
-附主动型LOF套利框架总结，QDII套利也可以参考。
-![image](https://github.com/mydreamworldpolly/LOF-Fund-Tools/assets/35619739/2536c091-850d-4cf6-9d99-e447e5b4957f)
-阈值数据来源：https://xueqiu.com/8228564016/147153325
+- RESTful API 设计，提供 JSON 格式数据
+- 支持频率限制（至少 30 秒调用一次）
+- 数据缓存机制，减少 API 调用频率
+- 完善的错误处理和日志记录
+- 适合生产环境部署
 
+## 安装
 
-Free LOF fund arbitrage tool,  using AKShare as the data source.
+1. 克隆代码库：
 
-To use this, you need to have a Python environment set up. Please install the following libraries:
+```bash
+git clone https://github.com/yourusername/LOF-Fund-Tools.git
+cd LOF-Fund-Tools
+```
 
-akshare
-flask
-pandas
-numpy
+2. 创建并激活虚拟环境：
 
-To view the fund data, you can access http://127.0.0.1:5000 in your web browser.
+```bash
+python -m venv venv
+source venv/bin/activate  # Linux/Mac
+# 或 venv\Scripts\activate  # Windows
+```
 
-The system's default filter conditions are: daily trading volume greater than 500,000 yuan, and a premium rate greater than 0.3% or a discount rate greater than 0.7% for the funds. If you have special requirements, you can modify the filter_funds function.
+3. 安装依赖：
 
-The system by default sorts the funds by the absolute value of the premium rate in descending order. The information is displayed as shown in the image.
+```bash
+pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple/
+```
 
-As an extremely simple tool, it will fetch data each time it refreshes, so the webpage may load slowly. Please understand. Hopefully, it can help more retail investors get opportunities for LOF arbitrage without having to pay for shovels (tools).
+## 本地运行
+
+```bash
+python lof3.py
+```
+
+应用将在 http://localhost:5000 上运行。
+
+- 访问 http://localhost:5000 查看 HTML 页面
+- 访问 http://localhost:5000/lof 获取 JSON 格式数据
+
+## 生产环境部署
+
+### 使用 Gunicorn 部署（Linux/Mac）
+
+```bash
+gunicorn -w 4 -b 0.0.0.0:5001 lof3:application
+```
+
+### 使用 Docker 部署
+
+1. 创建 Dockerfile：
+
+```dockerfile
+FROM python:3.12-slim
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple/
+
+COPY lof3.py .
+
+ENV PORT=5000
+ENV DEBUG=False
+
+EXPOSE 5000
+
+CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:5000", "lof3:application"]
+```
+
+2. 构建并运行 Docker 容器：
+
+```bash
+docker build -t lof-fund-tools .
+docker run -p 5000:5000 lof-fund-tools
+```
+
+## 环境变量
+
+- `PORT`: 应用监听端口（默认：5000）
+- `DEBUG`: 是否启用调试模式（默认：False）
+
+## API 文档
+
+### GET /lof
+
+获取 LOF 基金套利机会列表
+
+**响应示例**：
+
+```json
+{
+  "status": "success",
+  "update_time": "2024-06-15 22:30:45",
+  "count": 10,
+  "data": [
+    {
+      "基金代码": "501000",
+      "基金名称": "XX LOF基金",
+      "溢价率": 1.25,
+      "成交额": 15000000,
+      "限额": 5000000,
+      "换手率": 0.85,
+      "手续费": 0.15,
+      "申购状态": "开放",
+      "赎回状态": "开放",
+      "最新价": 1.052,
+      "估值": 1.039,
+      "涨跌幅": 0.32,
+      "基金类型": "股票型",
+      "净值日期": "2024-06-14"
+    }
+    // 更多数据...
+  ]
+}
+```
+
+## 注意事项
+
+- 该服务依赖于 akshare 库提供的数据
+- 接口限制每 30 秒调用一次，以避免过于频繁的请求
+- 建议在生产环境中使用反向代理（如 Nginx）进行部署
+
+## 许可证
+
+[MIT License](LICENSE)
